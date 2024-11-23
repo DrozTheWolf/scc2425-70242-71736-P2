@@ -17,7 +17,7 @@ public class DB {
 	public static final boolean useCache = true;
 
 	// if false then use NoSQL
-	public static final boolean usePostegre = false;
+	public static final boolean usePostegre = true;
 
 	// use only with Postegre/Hibernate
 	public static <T> List<T> sql(String query, Class<T> clazz) {
