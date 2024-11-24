@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-shorts
+  labels:
+    app: users-shorts
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: users-shorts
+  template:
+    metadata:
+      labels:
+        app: users-shorts
+    spec:
+      containers:
+        - name: users-shorts-container
+          image: X
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: users-shorts
+spec:
+  selector:
+    app: users-shorts
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres-container
+          image: bitnami/postgresql:15
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRESQL_USERNAME
+              value: "postgres"
+            - name: POSTGRESQL_PASSWORD
+              value: "password"
+            - name: POSTGRESQL_DATABASE
+              value: "users_and_shorts_db"
+          volumeMounts:
+            - mountPath: /bitnami/postgresql
+              name: postgres-data
+  volumes:
+    - name: postgres-data
+      persistentVolumeClaim:
+        claimName: postgres-volume
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP
