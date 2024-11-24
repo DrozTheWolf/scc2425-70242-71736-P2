@@ -66,10 +66,10 @@ spec:
           volumeMounts:
             - mountPath: /bitnami/postgresql
               name: postgres-data
-  volumes:
-    - name: postgres-data
-      persistentVolumeClaim:
-        claimName: postgres-volume
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-volume
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
