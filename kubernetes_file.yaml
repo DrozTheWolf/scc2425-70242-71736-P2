@@ -14,9 +14,11 @@ spec:
       labels:
         app: users-shorts
     spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
       containers:
         - name: users-shorts-container
-          image: X
+          image: joaomcustodio/proj2-71736-70242-users-shorts
           ports:
             - containerPort: 8080
 ---
