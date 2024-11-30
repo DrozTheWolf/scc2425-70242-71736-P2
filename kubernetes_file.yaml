@@ -98,6 +98,29 @@ spec:
       targetPort: 5432
   type: ClusterIP
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: blobs-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blobs
+spec:
+  selector:
+    app: blobs
+  ports:
+    - protocol: TCP
+      port: 90
+      targetPort: 9090
+  type: LoadBalancer
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -122,4 +145,3 @@ spec:
           image: drozthewolf/scc-70242-71736
           ports:
             - containerPort: 9090
----
