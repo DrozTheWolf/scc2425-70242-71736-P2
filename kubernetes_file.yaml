@@ -142,6 +142,6 @@ spec:
         "kubernetes.io/os": linux
       containers:
         - name: blobs-container
-          image: drozthewolf/scc-70242-71736
+          image: drozthewolf/scc-70242-71736-p2-blobs
           ports:
             - containerPort: 9090
