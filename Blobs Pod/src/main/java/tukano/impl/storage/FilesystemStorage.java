@@ -19,34 +19,31 @@ import java.util.function.Consumer;
 import tukano.api.Result;
 import utils.Hash;
 import utils.IO;
-import tukano.impl.storage.CloudBlobIO;
 
 public class FilesystemStorage implements BlobStorage {
 	private final String rootDir;
 	private static final int CHUNK_SIZE = 4096;
 	private static final String DEFAULT_ROOT_DIR = "/tmp/";
 
-	private final CloudBlobIO cloudIO;
-
 	public FilesystemStorage() {
 		this.rootDir = DEFAULT_ROOT_DIR;
-		cloudIO = new CloudBlobIO();
 	}
 	
 	@Override
 	public Result<Void> write(String path, byte[] bytes) {
 		if (path == null)
 			return error(BAD_REQUEST);
-		;
 
-		if (cloudIO.blobExists(path)) {
-			if (Arrays.equals(Hash.sha256(bytes), Hash.sha256(cloudIO.read(path))))
+		var file = toFile( path );
+
+		if (file.exists()) {
+			if (Arrays.equals(Hash.sha256(bytes), Hash.sha256(IO.read(file))))
 				return ok();
 			else
 				return error(CONFLICT);
 
 		}
-		cloudIO.write(path, bytes);
+		IO.write(file, bytes);
 		return ok();
 	}
 
@@ -54,11 +51,12 @@ public class FilesystemStorage implements BlobStorage {
 	public Result<byte[]> read(String path) {
 		if (path == null)
 			return error(BAD_REQUEST);
-
-		if( ! cloudIO.blobExists(path) )
+		
+		var file = toFile( path );
+		if( ! file.exists() )
 			return error(NOT_FOUND);
 		
-		var bytes = cloudIO.read(path);
+		var bytes = IO.read(file);
 		return bytes != null ? ok( bytes ) : error( INTERNAL_ERROR );
 	}
 
@@ -66,11 +64,12 @@ public class FilesystemStorage implements BlobStorage {
 	public Result<Void> read(String path, Consumer<byte[]> sink) {
 		if (path == null)
 			return error(BAD_REQUEST);
-
-		if( ! cloudIO.blobExists(path) )
+		
+		var file = toFile( path );
+		if( ! file.exists() )
 			return error(NOT_FOUND);
 		
-		cloudIO.read( path, CHUNK_SIZE, sink );
+		IO.read( file, CHUNK_SIZE, sink );
 		return ok();
 	}
 	
@@ -79,11 +78,17 @@ public class FilesystemStorage implements BlobStorage {
 		if (path == null)
 			return error(BAD_REQUEST);
 
-        if ( !cloudIO.delete(path)) {
-			return error(NOT_FOUND);
+		try {
+			var file = toFile( path );
+			Files.walk(file.toPath())
+			.sorted(Comparator.reverseOrder())
+			.map(Path::toFile)
+			.forEach(File::delete);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return error(INTERNAL_ERROR);
 		}
-
-        return ok();
+		return ok();
 	}
 	
 	private File toFile(String path) {
