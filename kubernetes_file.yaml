@@ -97,3 +97,29 @@ spec:
       port: 5432
       targetPort: 5432
   type: ClusterIP
+---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blobs
+  labels:
+    app: blobs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blobs
+  template:
+    metadata:
+      labels:
+        app: blobs
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: blobs-container
+          image: drozthewolf/scc-70242-71736
+          ports:
+            - containerPort: 9090
+---
