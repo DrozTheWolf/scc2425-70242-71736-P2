@@ -19,6 +19,9 @@ spec:
       containers:
         - name: users-shorts-container
           image: joaomcustodio/proj2-71736-70242-users-shorts
+          env:
+            - name: BLOBS_SERVICE_URL
+              value: "http://proj2-71736-70242-blobs.northeurope.cloudapp.azure.com/tukano-1/rest"
           ports:
             - containerPort: 8080
 ---
@@ -142,6 +145,9 @@ spec:
         "kubernetes.io/os": linux
       containers:
         - name: blobs-container
-          image: drozthewolf/scc-70242-71736-p2-blobs
+          image: joaomcustodio/proj2-71736-70242-blobs
+          env:
+            - name: BLOBS_SERVICE_URL
+              value: "http://proj2-71736-70242-blobs.northeurope.cloudapp.azure.com/tukano-1/rest"
           ports:
             - containerPort: 9090

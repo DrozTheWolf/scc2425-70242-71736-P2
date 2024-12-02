@@ -11,6 +11,10 @@ import static tukano.api.Result.ErrorCode.FORBIDDEN;
 import static utils.DB.getOne;
 import static utils.DB.sqlDB;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,8 +35,6 @@ public class JavaShorts implements Shorts {
 	
 	private static Shorts instance;
 
-	private static final String BLOB_SERVICE_URL = "TODO"; // TODO
-
 	private static final String BLOBS_NAME = "blobs";
 	
 	synchronized public static Shorts getInstance() {
@@ -51,7 +53,10 @@ public class JavaShorts implements Shorts {
 		return errorOrResult( okUser(userId, password), user -> {
 			
 			var shortId = format("%s+%s", userId, UUID.randomUUID());
-			var blobUrl = format("%s/%s/%s", TukanoRestServer.serverURI, BLOBS_NAME, shortId);
+			// var blobUrl = format("%s/%s/%s", TukanoRestServer.serverURI, BLOBS_NAME, shortId);
+
+			// IP/tukano-1/rest/blobs/shortid
+			var blobUrl = format("%s/%s/%s", TukanoRestServer.blobServerIp, BLOBS_NAME, shortId);
 			var shrt = new Short(shortId, userId, blobUrl);
 
 			return errorOrValue(DB.insertOne(shrt), s -> s.copyWithLikes_And_Token(0));
@@ -95,7 +100,7 @@ public class JavaShorts implements Shorts {
 						hibernate.createNativeQuery( query, Likes.class).executeUpdate();
 
 						//JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get() );
-						// TODO replace the above line with the HTTP request aux method
+						sendBlobDeleteRequest(shrt.getBlobUrl(), Token.get());
 					});
 				});
 			});
@@ -114,7 +119,7 @@ public class JavaShorts implements Shorts {
 				}
 
 				//tukano.impl.JavaBlobs.getInstance().delete(shrt.getBlobUrl(), tukano.impl.Token.get() );
-				// TODO replace the above line with the HTTP request aux method
+				sendBlobDeleteRequest(shrt.getBlobUrl(), Token.get());
                 return ok();
             });
 		}
@@ -292,8 +297,28 @@ public class JavaShorts implements Shorts {
 		}
 	}
 
-	private void sendBlobDeleteRequest() {
+	private void sendBlobDeleteRequest(String blobUrl, String token) {
+		try {
 
-		// TODO send an HTTP request to delete a blob
+			HttpClient client = HttpClient.newHttpClient();
+
+			HttpRequest request = HttpRequest.newBuilder()
+					.uri(URI.create(blobUrl))
+					.DELETE()
+					.build();
+
+			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+			if (response.statusCode() == 200 || response.statusCode() == 204) {
+				System.out.println("Successfully deleted blob: " + blobUrl);
+			} else {
+				System.out.println("Failed to delete blob. Status code: " + response.statusCode());
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error occurred while sending DELETE request: " + e.getMessage());
+		}
+
 	}
 }

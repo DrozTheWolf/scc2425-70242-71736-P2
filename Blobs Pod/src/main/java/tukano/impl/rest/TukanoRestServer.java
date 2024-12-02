@@ -27,6 +27,7 @@ public class TukanoRestServer extends Application {
 	public static final int PORT = 8080;
 
 	public static String serverURI;
+	public static String blobURI;
 			
 	static {
 		System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s");
@@ -43,6 +44,9 @@ public class TukanoRestServer extends Application {
 	}
 	
 	public TukanoRestServer() {
+
+		blobURI = System.getenv("BLOBS_SERVICE_URL");
+
 		serverURI = String.format(SERVER_BASE_URI, IP.hostname(), PORT);
 		Token.setSecret( Args.valueOf("-secret", ""));
 		resources.add(RestBlobsResource.class);

@@ -8,6 +8,10 @@ import static tukano.api.Result.ok;
 import static tukano.api.Result.ErrorCode.BAD_REQUEST;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -15,6 +19,7 @@ import java.util.logging.Logger;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
+import tukano.impl.rest.TukanoRestServer;
 import utils.DB;
 
 public class JavaUsers implements Users {
@@ -74,7 +79,8 @@ public class JavaUsers implements Users {
 			Executors.defaultThreadFactory().newThread( () -> {
 				JavaShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
 				//JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
-				// TODO replace the above line with the aux method to send a request
+				deleteAllBlobsRequest(userId, Token.get(userId));
+
 			}).start();
 			
 			return DB.deleteOne( user);
@@ -123,7 +129,30 @@ public class JavaUsers implements Users {
 		return (userId == null || pwd == null || info.getUserId() != null && ! userId.equals( info.getUserId()));
 	}
 
-	private void deleteAllBlobsRequest() {
-		// TODO make an HTTP request to delete all blobs belonging to this user
+	private void deleteAllBlobsRequest(String userId, String token) {
+
+		try {
+
+			// IP/tukano-1/rest /blobs /userid /blobs?token=X
+			String url = String.format("%s/blobs/%s/blobs?token=%s", TukanoRestServer.blobServerIp, userId, token);
+			HttpClient client = HttpClient.newHttpClient();
+
+			HttpRequest request = HttpRequest.newBuilder()
+					.uri(URI.create(url))
+					.DELETE()
+					.build();
+
+			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+			if (response.statusCode() == 200 || response.statusCode() == 204) {
+				System.out.println("Successfully deleted all blobs for user: " + userId);
+			} else {
+				System.out.println("Failed to delete blobs. Status code: " + response.statusCode());
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error occurred while sending DELETE request: " + e.getMessage());
+		}
 	}
 }
