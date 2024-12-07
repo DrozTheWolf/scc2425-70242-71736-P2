@@ -14,12 +14,12 @@ public interface Blobs {
 	String NAME = "blobs";
 
 
-	Result<Void> upload(Cookie cookie, String blobId, byte[] bytes, String token);
-	// Result<Void> upload(String blobId, byte[] bytes, String token);
+	// Result<Void> upload(Cookie cookie, String blobId, byte[] bytes, String token);
+	Result<Void> upload(String blobId, byte[] bytes, String token);
 
 
-	Result<byte[]> download(Cookie cookie, String blobId, String token);
-	// Result<byte[]> download(String blobId, String token);
+	// Result<byte[]> download(Cookie cookie, String blobId, String token);
+	Result<byte[]> download(String blobId, String token);
 
 
 	/**
@@ -42,8 +42,8 @@ public interface Blobs {
 		return Result.ok();
 	}
 	
-	Result<Void> delete( Cookie cookie, String blobId, String token );
-	// Result<Void> delete(String blobId, String token );
+	// Result<Void> delete( Cookie cookie, String blobId, String token );
+	Result<Void> delete(String blobId, String token );
 	
 	Result<Void> deleteAllBlobs( String userId, String token );
 

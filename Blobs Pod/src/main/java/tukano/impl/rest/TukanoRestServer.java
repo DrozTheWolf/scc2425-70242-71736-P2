@@ -10,6 +10,7 @@ import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import tukano.impl.Token;
+import tukano.impl.auth.*;
 import utils.Args;
 import utils.IP;
 import utils.Props;
@@ -52,6 +53,8 @@ public class TukanoRestServer extends Application {
 		serverURI = String.format(SERVER_BASE_URI, IP.hostname(), PORT);
 		Token.setSecret( Args.valueOf("-secret", ""));
 		resources.add(RestBlobsResource.class);
+		resources.add(RequestCookiesFilter.class);
+		resources.add(RequestCookiesCleanupFilter.class);
 	}
 
 
@@ -60,6 +63,8 @@ public class TukanoRestServer extends Application {
 		ResourceConfig config = new ResourceConfig();
 		
 		config.register(RestBlobsResource.class);
+		config.register(RequestCookiesFilter.class);
+		config.register(RequestCookiesCleanupFilter.class);
 		
 		JdkHttpServerFactory.createHttpServer( URI.create(serverURI.replace(IP.hostname(), INETADDR_ANY)), config);
 		

@@ -31,6 +31,7 @@ import tukano.api.Result;
 import tukano.impl.rest.TukanoRestServer;
 import tukano.impl.storage.BlobStorage;
 import tukano.impl.storage.FilesystemStorage;
+import tukano.impl.auth.*;
 import tukano.impl.FakeRedisLayer;
 import tukano.impl.Session;
 import utils.Hash;
@@ -40,16 +41,12 @@ public class JavaBlobs implements Blobs {
 
 	static final boolean useAuth = true;
 
-	static final String PATH = "login";
-	static final String USER = "username";
-	static final String PWD = "password";
 	static final String COOKIE_KEY = "scc:session";
-	static final String LOGIN_PAGE = "login.html";
 	private static final int MAX_COOKIE_AGE = 3600;
-	static final String REDIRECT_TO_AFTER_LOGIN = "/ctrl/version";
 
 	static final String ADMIN_USER = "admin";
 	static final String ADMIN_PASS = "admin";
+	static final String USER_NAME = "user";
 
 	private static Blobs instance;
 	private static Logger Log = Logger.getLogger(JavaBlobs.class.getName());
@@ -68,17 +65,26 @@ public class JavaBlobs implements Blobs {
 		baseURI = String.format("%s/%s/", TukanoRestServer.blobURI, Blobs.NAME);
 	}
 
-	/*
+
 	@Override
 	public Result<Void> upload(String blobId, byte[] bytes, String token) {
 		Log.info(() -> format("upload : blobId = %s, sha256 = %s, token = %s\n", blobId, Hex.of(Hash.sha256(bytes)), token));
+
+		if (useAuth){
+			try {
+				var session = validateSession(USER_NAME);
+			} catch (javax.ws.rs.NotAuthorizedException exception){
+				return error(FORBIDDEN);
+			}
+		}
 
 		if (!validBlobId(blobId, token))
 			return error(FORBIDDEN);
 
 		return storage.write( toPath( blobId ), bytes);
-	}*/
+	}
 
+	/*
 	@Override
     	public Result<Void> upload(Cookie cookie, String blobId, byte[] bytes, String token) {
     		Log.info(() -> format("upload : blobId = %s, sha256 = %s, token = %s\n", blobId, Hex.of(Hash.sha256(bytes)), token));
@@ -87,19 +93,28 @@ public class JavaBlobs implements Blobs {
     			return error(FORBIDDEN);
 
     		return storage.write( toPath( blobId ), bytes);
-    	}
+    	}*/
 
-    /*
+
 	@Override
 	public Result<byte[]> download(String blobId, String token) {
 		Log.info(() -> format("download : blobId = %s, token=%s\n", blobId, token));
+
+		if (useAuth){
+			try {
+				var session = validateSession(USER_NAME);
+			} catch (javax.ws.rs.NotAuthorizedException exception){
+				return error(FORBIDDEN);
+			}
+		}
 
 		if( ! validBlobId( blobId, token ) )
 			return error(FORBIDDEN);
 
 		return storage.read( toPath( blobId ) );
-	}*/
+	}
 
+	/*
 	@Override
     	public Result<byte[]> download(Cookie cookie, String blobId, String token) {
     		Log.info(() -> format("download : blobId = %s, token=%s\n", blobId, token));
@@ -108,7 +123,7 @@ public class JavaBlobs implements Blobs {
     			return error(FORBIDDEN);
 
     		return storage.read( toPath( blobId ) );
-    	}
+    	}*/
 
 	@Override
 	public Result<Void> downloadToSink(String blobId, Consumer<byte[]> sink, String token) {
@@ -120,17 +135,26 @@ public class JavaBlobs implements Blobs {
 		return storage.read( toPath(blobId), sink);
 	}
 
-    /*
+
 	@Override
 	public Result<Void> delete(String blobId, String token) {
 		Log.info(() -> format("delete : blobId = %s, token=%s\n", blobId, token));
+
+		if (useAuth){
+			try {
+				var session = validateSession(ADMIN_USER);
+			} catch (javax.ws.rs.NotAuthorizedException exception){
+				return error(FORBIDDEN);
+			}
+		}
 	
 		if( ! validBlobId( blobId, token ) )
 			return error(FORBIDDEN);
 
 		return storage.delete( toPath(blobId));
-	}*/
+	}
 
+	/*
 	@Override
     	public Result<Void> delete(Cookie cookie, String blobId, String token) {
     		Log.info(() -> format("delete : blobId = %s, token=%s\n", blobId, token));
@@ -139,7 +163,7 @@ public class JavaBlobs implements Blobs {
     			return error(FORBIDDEN);
 
     		return storage.delete( toPath(blobId));
-    	}
+    	}*/
 
 	@Override
 	public Result<Response> login( String user, String password ) {
@@ -159,7 +183,7 @@ public class JavaBlobs implements Blobs {
                             .httpOnly(true)
                             .build();
 
-            FakeRedisLayer.getInstance().putSession(new Session(uid, user, true)); // admin
+            FakeRedisLayer.getInstance().putSession(new Session(uid, ADMIN_USER)); // admin
             return Result.ok(Response.ok().cookie(cookie).build());
 		}
 
@@ -174,10 +198,10 @@ public class JavaBlobs implements Blobs {
 					.httpOnly(true)
 					.build();
 			
-			FakeRedisLayer.getInstance().putSession( new Session( uid, user, false)); // non-admin
+			FakeRedisLayer.getInstance().putSession( new Session( uid, USER_NAME)); // non-admin
             return Result.ok(Response.ok().cookie(cookie).build());
 		} else {
-			throw new NotAuthorizedException("Incorrect login");
+			Log.info(() -> format("login: incorrect login"));
             return Result.error(FORBIDDEN);
 		}
 
@@ -195,6 +219,11 @@ public class JavaBlobs implements Blobs {
 
 	static public Session validateSession(String userId) throws NotAuthorizedException {
     		var cookies = RequestCookies.get();
+
+			if (cookies == null){
+				throw new NotAuthorizedException("No cookie found");
+			}
+
     		return validateSession( cookies.get(COOKIE_KEY ), userId );
     	}
 
