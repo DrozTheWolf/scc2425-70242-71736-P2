@@ -9,6 +9,7 @@ import tukano.api.User;
 import tukano.api.Short;
 import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
+import tukano.impl.rest.TukanoRestServer;
 import utils.JSON;
 
 import java.util.logging.Logger;
@@ -36,9 +37,13 @@ public class RedisCache {
         if( instance != null)
             return instance;
 
-        PropsCloud.load(PropsCloud.PROPS_PATH);
-        String redis_key = PropsCloud.get("REDIS_KEY", "");
-        String redis_url = PropsCloud.get("REDIS_URL", "");
+        // PropsCloud.load(PropsCloud.PROPS_PATH);
+        // String redis_key = PropsCloud.get("REDIS_KEY", "");
+        // String redis_url = PropsCloud.get("REDIS_URL", "");
+
+        int redisTimeout = 2000;
+        String redisHost = TukanoRestServer.redisHost;
+        int redisPort = Integer.parseInt(TukanoRestServer.redisPort);
 
         var poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(128);
@@ -49,7 +54,8 @@ public class RedisCache {
         poolConfig.setTestWhileIdle(true);
         poolConfig.setNumTestsPerEvictionRun(3);
         poolConfig.setBlockWhenExhausted(true);
-        instance = new JedisPool(poolConfig, redis_url, REDIS_PORT, REDIS_TIMEOUT, redis_key, Redis_USE_TLS);
+
+        instance = new JedisPool(poolConfig, redisHost, redisPort, redisTimeout);
         return instance;
     }
 
