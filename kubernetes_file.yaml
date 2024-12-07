@@ -149,5 +149,7 @@ spec:
           env:
             - name: BLOBS_SERVICE_URL
               value: "http://proj2-71736-70242-blobs.northeurope.cloudapp.azure.com/tukano-1/rest"
+            - name: USERS_SERICE_URL
+              value: "http://proj2-71736-70242-users-shorts.northeurope.cloudapp.azure.com/tukano-1/rest"
           ports:
             - containerPort: 9090
